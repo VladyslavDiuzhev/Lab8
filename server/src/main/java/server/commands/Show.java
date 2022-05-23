@@ -29,6 +29,10 @@ public class Show implements Command {
         for (Vehicle vehicle : stack) {
             str.append(vehicle.toString()).append("\n");
         }
-        return new Message(str + "Всего: " + stack.size() + ".\n", true);
+//        System.out.println("YES");
+        Message msg = new Message(str + "Всего: " + stack.size() + ".\n", true);
+        msg.setType("ALL");
+        msg.setObject(stack);
+        return msg;
     }
 }

@@ -101,6 +101,20 @@ public class Vehicle implements Comparable<Vehicle>, Serializable {
         this.enginePower = enginePower;
     }
 
+    public void setEnginePower(String Power) throws Exception {
+        float enginePower;
+        try {
+            enginePower = Float.parseFloat(Power);
+        } catch (NumberFormatException e){
+            throw new Exception("Недопустимое значение мощности");
+        }
+
+        if (enginePower <= 0) {
+            throw new Exception("Мощность двигателя (поле enginePower) не может быть отрицательной.");
+        }
+        this.enginePower = enginePower;
+    }
+
     public void setName(String name) throws Exception {
         if (name == null || name.trim().isEmpty()) {
             throw new Exception("Название (поле name) не может быть пустой строкой или null.");
@@ -109,6 +123,19 @@ public class Vehicle implements Comparable<Vehicle>, Serializable {
     }
 
     public void setCoordinates(Long xCord, double yCord) throws Exception {
+        this.coordinates = new Coordinates(xCord, yCord);
+    }
+
+    public void setCoordinates(String x, String y) throws Exception {
+        long xCord;
+        double yCord;
+        try {
+            xCord = Long.parseLong(x);
+            yCord = Double.parseDouble(y);
+        }catch (NumberFormatException e){
+            throw new Exception("Неверный формат координат.");
+        }
+
         this.coordinates = new Coordinates(xCord, yCord);
     }
 

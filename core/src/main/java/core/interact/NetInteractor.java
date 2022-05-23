@@ -3,12 +3,20 @@ package core.interact;
 import java.io.*;
 
 public class NetInteractor implements UserInteractor {
-    private ObjectOutputStream dataOutputStream;
-    private ObjectInputStream dataInputStream;
+    private final ObjectOutputStream dataOutputStream;
+    private final ObjectInputStream dataInputStream;
 
     public NetInteractor(ObjectInputStream dataInputStream, ObjectOutputStream dataOutputStream) {
         this.dataInputStream = dataInputStream;
         this.dataOutputStream = dataOutputStream;
+    }
+
+    public ObjectInputStream getDataInputStream() {
+        return dataInputStream;
+    }
+
+    public ObjectOutputStream getDataOutputStream() {
+        return dataOutputStream;
     }
 
     @Override

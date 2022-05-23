@@ -5,6 +5,7 @@ import server.database.models.*;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Properties;
@@ -21,16 +22,18 @@ public abstract class SetupDB {
         try {
             Class.forName("org.postgresql.Driver");
             Properties info = new Properties();
-            info.load(new FileInputStream(cfgFile));
-            c = DriverManager.getConnection("jdbc:postgresql://pg:5432/studs", info.getProperty("DB_LOGIN"), info.getProperty("DB_PASSWORD"));
+            info.load(Files.newInputStream(cfgFile.toPath()));
+            c = DriverManager.getConnection(String.format("jdbc:postgresql://%s:%s/%s",info.getProperty("DB_HOST"),
+                    info.getProperty("DB_PORT"),info.getProperty("DB_NAME")), info.getProperty("DB_LOGIN"),
+                    info.getProperty("DB_PASSWORD"));
 
             userInteractor.broadcastMessage("Успешное соединение с БД.", true);
 
             connection = c;
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
-            userInteractor.broadcastMessage("Ошибка при соединении с БД.", true);
+//            e.printStackTrace();
+            userInteractor.broadcastMessage("Ошибка при соединении с БД. Проверьте валидность конфигурационного файла.", true);
             return false;
         }
     }

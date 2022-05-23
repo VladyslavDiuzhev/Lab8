@@ -29,7 +29,7 @@ public class App {
             PORT = Integer.parseInt(ar[1]);
 
         } catch (Exception e) {
-            userInteractor.broadcastMessage("Укажите адрес в качестве аргумента командной строки (Формат - localhost:50001).", true);
+            userInteractor.broadcastMessage("Укажите адрес в качестве аргумента командной строки (Формат - localhost:8001).", true);
             return;
         }
         connect();

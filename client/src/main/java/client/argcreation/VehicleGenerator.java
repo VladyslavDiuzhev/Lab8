@@ -159,4 +159,14 @@ public abstract class VehicleGenerator {
 
         return vehicle;
     }
+
+    public static Vehicle createVehicle(String type, String fuelType, String name, String power, String x, String y) throws Exception {
+        Vehicle vehicle = new Vehicle();
+        vehicle.setType(VehicleType.getByName(type));
+        vehicle.setFuelType(FuelType.getByName(fuelType));
+        vehicle.setName(name);
+        vehicle.setEnginePower(power);
+        vehicle.setCoordinates(x, y);
+        return vehicle;
+    }
 }

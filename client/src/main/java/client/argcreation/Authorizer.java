@@ -20,4 +20,8 @@ public abstract class Authorizer {
         }
         return new UserInfo(login, password);
     }
+
+    public static boolean validate(UserInfo userInfo){
+        return !userInfo.getLogin().isEmpty() && !userInfo.getPassword().isEmpty();
+    }
 }

@@ -60,7 +60,10 @@ public class Add implements Command, Preprocessable {
         this.vehicle = vehicleRepository.saveGet(this.vehicle);
         if (vehicle != null){
             stack.add(this.vehicle);
-            return new Message("Элемент успешно добавлен.", true);
+            Message msg = new Message("Элемент успешно добавлен.", true);
+            msg.setType("ADD");
+            msg.setObject(this.vehicle);
+            return msg;
         }
         return new Message("Ошибка создания объекта.", false);
 

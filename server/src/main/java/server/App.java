@@ -51,6 +51,8 @@ public class App {
 
     private static HashMap<String, String> authorizedUsers = new HashMap<>();
 
+    //private static HashMap<String, ObjectOutputStream> outputStreamHashMap = new HashMap<>();
+
     private static Connection connectionDb;
 
 
@@ -74,14 +76,6 @@ public class App {
     private static boolean createShutdownHook() {
         try {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-//                try {
-//                    FileWriter fileWriter = new FileWriter(file);
-//                    fileWriter.write(VehicleStackXmlParser.stackToXml(new StackInfo(collection, Vehicle.getMaxId(), initDateTime)));
-//                    fileWriter.flush();
-//                } catch (Exception e) {
-//                    adminInteractor.broadcastMessage(e.getMessage(), true);
-//                }
-
                 adminInteractor.broadcastMessage("Остановка севера.", true);
             }));
             return true;
@@ -91,21 +85,13 @@ public class App {
         }
     }
 
-//    private static void uploadInfo() throws FileNotFoundException, NoSuchFieldException, IllegalAccessException {
-//        StackInfo stackInfo = VehicleStackXmlParser.parseFromXml(file);
-//        collection = Objects.requireNonNull(stackInfo).getStack();
-//        initDateTime = stackInfo.getCreationDate();
-//        Field field = Vehicle.class.getDeclaredField("maxId");
-//        field.setAccessible(true);
-//        field.setInt(null, stackInfo.getMaxId());
-//    }
-
     private static boolean uploadInfoDB() {
-        File file1 =  new File("db.cfg");
-        if (!file1.exists()){
-            System.out.println("Файла не существует ("+file1.getAbsolutePath()+")");
+        File file1 = new File("db.cfg");
+        if (!file1.exists()) {
+            System.out.println("Файла не существует (" + file1.getAbsolutePath() + ")");
+            return false;
         }
-        if (!SetupDB.createConnection(adminInteractor,file1)) {
+        if (!SetupDB.createConnection(adminInteractor, file1)) {
             return false;
         }
         SetupDB.createTables(adminInteractor);
@@ -126,23 +112,6 @@ public class App {
         if (!uploadInfoDB()) {
             return false;
         }
-//        try {
-//            uploadInfo();
-//        } catch (FileNotFoundException | NoSuchFieldException | IllegalAccessException | NullPointerException ex) {
-//            if (ex instanceof NoSuchFieldException || ex instanceof IllegalAccessException || ex instanceof NullPointerException) {
-//                adminInteractor.broadcastMessage("Возникли проблемы при обработке файла. Данные не считаны. Создаем новый файл.", true);
-//            }
-//            initDateTime = ZonedDateTime.now();
-//            FileWriter fileWriter;
-//            try {
-//                fileWriter = new FileWriter(file);
-//                fileWriter.close();
-//            } catch (IOException e) {
-//                adminInteractor.broadcastMessage("Файл не может быть создан, недостаточно прав доступа или формат имени файла неверен.", true);
-//                adminInteractor.broadcastMessage("Сообщение об ошибке: " + e.getMessage(), true);
-//                return false;
-//            }
-//        }
         return createShutdownHook();
     }
 
@@ -182,6 +151,7 @@ public class App {
             try {
                 this.outputStream = new ObjectOutputStream(socket.getOutputStream());
                 this.inputStream = new ObjectInputStream(socket.getInputStream());
+                //outputStreamHashMap.put(socket.getInetAddress().toString() + ":" + socket.getPort(), this.outputStream);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -204,19 +174,21 @@ public class App {
                     Precommand preCommand = null;
                     try {
                         preCommand = (Precommand) inputStream.readObject();
+//                        System.out.println(preCommand.getArg());
                     } catch (ClassNotFoundException e) {
                         answerPool.submit(new AnswerService(this.outputStream, new Message("Ошибка при обработке команды.", false)));
                     } catch (IOException e) {
-//                        System.out.println(e.getMessage());
                         break;
                     }
                     processingPool.submit(new ProcessingService(outputStream, preCommand, socket.getInetAddress().toString() + ":" + socket.getPort()));
                 }
                 adminInteractor.broadcastMessage(String.format("Клиент (%s:%s) отсоединился!", socket.getInetAddress().toString(), socket.getPort()), true);
                 authorizedUsers.remove(socket.getInetAddress().toString() + ":" + socket.getPort());
+                //outputStreamHashMap.remove(socket.getInetAddress().toString() + ":" + socket.getPort());
             } catch (Exception ignored) {
             }
             authorizedUsers.remove(socket.getInetAddress().toString() + ":" + socket.getPort());
+            //outputStreamHashMap.remove(socket.getInetAddress().toString() + ":" + socket.getPort());
             return false;
         }
     }
@@ -265,7 +237,7 @@ public class App {
                 if (command != null && !authorizedUsers.get(currentUser).isEmpty()) {
                     try {
                         msg = command.execute(collection);
-                    } catch (Exception e){
+                    } catch (Exception e) {
                         e.printStackTrace();
                         msg = new Message("Возникла ошибка.", true);
                     }
@@ -275,6 +247,11 @@ public class App {
                 } else {
                     msg = new Message("Ошибка при обработке команды.", false);
                 }
+
+                //for (ObjectOutputStream outputStream1: outputStreamHashMap.values()){
+                //    answerPool.submit(new AnswerService(outputStream1, msg));
+                //}
+                //return;
             }
             lock.unlock();
 //            System.out.println(msg.getText());
