@@ -3,6 +3,7 @@ package server.commands;
 import core.essentials.Vehicle;
 import core.interact.Message;
 import core.precommands.Precommand;
+import server.commands.interfaces.Changing;
 
 import java.sql.Connection;
 import java.util.Collections;
@@ -14,7 +15,7 @@ import java.util.Stack;
  * @author Владислав Дюжев
  * @version 1.0
  */
-public class AddIfMin extends Add {
+public class AddIfMin extends Add implements Changing {
     public AddIfMin(boolean from_script, Connection connection) {
         super(from_script, connection);
     }
@@ -35,11 +36,14 @@ public class AddIfMin extends Add {
             this.vehicle = vehicleRepository.saveGet(this.vehicle);
             if (vehicle != null){
                 stack.add(this.vehicle);
-                return new Message("Элемент успешно добавлен.", true);
+                Message msg = new Message("Элемент успешно добавлен.", true);
+                msg.setType("ADD");
+                msg.setObject(this.vehicle);
+                return msg;
             }
             return new Message("Ошибка создания объекта.", false);
         } else {
-            return  new Message("Элемент не минимальный.", true);
+            return  new Message("Элемент не минимальный.", false);
         }
 
     }

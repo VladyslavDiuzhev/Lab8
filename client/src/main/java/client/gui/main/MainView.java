@@ -64,18 +64,20 @@ public class MainView extends JFrame {
     }
 
     private void startBackground() {
+        System.out.println("Started");
         SwingWorker<Message, Message> swingWorker = new SwingWorker<Message, Message>() {
             @Override
             protected Message doInBackground() throws Exception {
                 Message msg = null;
                 if (!isCancelled()) {
                     msg = (Message) objectInputStream.readObject();
-                    publish(msg);
-                    if (getProgress() != 5) {
-                        setProgress(5);
-                    } else {
-                        setProgress(4);
-                    }
+                    System.out.println("Recieved!");
+//                    publish(msg);
+//                    if (getProgress() != 5) {
+//                        setProgress(5);
+//                    } else {
+//                        setProgress(4);
+//                    }
                 }
                 return msg;
             }
@@ -155,6 +157,7 @@ public class MainView extends JFrame {
         createButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                System.out.println("Отправка");
                 ObjectPrecommand addPrecommand;
                 if (checkBox.isSelected()) {
                     addPrecommand = new ObjectPrecommand("add_if_min");

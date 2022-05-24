@@ -2,6 +2,7 @@ package server;
 
 import server.commands.Authorize;
 import server.commands.Register;
+import server.commands.interfaces.Changing;
 import server.commands.interfaces.Command;
 import server.commands.interfaces.DateCommand;
 import core.essentials.StackInfo;
@@ -42,7 +43,7 @@ public class App {
     private static ZonedDateTime initDateTime = ZonedDateTime.now();
     private static ServerSocket serverSocket;
 
-    private static final int MAX_CONNECTIONS = 10;
+    private static final int MAX_CONNECTIONS = 5;
     private static final ReentrantLock lock = new ReentrantLock();
 
     private static final ForkJoinPool requestPool = new ForkJoinPool(MAX_CONNECTIONS);
@@ -50,6 +51,7 @@ public class App {
     private static final ExecutorService answerPool = Executors.newCachedThreadPool();
 
     private static HashMap<String, String> authorizedUsers = new HashMap<>();
+    private static final HashMap<String, UserConnection> connectionHashMap = new HashMap<>();
 
     //private static HashMap<String, ObjectOutputStream> outputStreamHashMap = new HashMap<>();
 
@@ -129,10 +131,14 @@ public class App {
         while (!serverSocket.isClosed()) {
             try {
                 Socket socket = serverSocket.accept();
-                authorizedUsers.put(socket.getInetAddress().toString() + ":" + socket.getPort(), "");
-                adminInteractor.broadcastMessage(String.format("Клиент (%s:%s) присоединился!", socket.getInetAddress().toString(), socket.getPort()), true);
+                String s = socket.getInetAddress().toString() + ":" + socket.getPort();
+                synchronized (connectionHashMap) {
+                    connectionHashMap.put(s, new UserConnection(socket));
+                }
+                authorizedUsers.put(s, "");
+                adminInteractor.broadcastMessage(String.format("Клиент (%s) присоединился!", s), true);
 
-                requestPool.execute(new RequestService(socket));
+                requestPool.execute(new RequestService(s));
 
             } catch (IOException e) {
                 adminInteractor.broadcastMessage("Ошибка при соединении.", true);
@@ -140,21 +146,40 @@ public class App {
         }
     }
 
-    static class RequestService extends ForkJoinTask {
-        private final Socket socket;
+    static class UserConnection {
+        Socket socket;
+        ObjectOutputStream out;
+        ObjectInputStream in;
+        boolean auth = false;
 
-        private ObjectInputStream inputStream;
-        private ObjectOutputStream outputStream;
-
-        public RequestService(Socket socket) {
+        public UserConnection(Socket socket) throws IOException {
             this.socket = socket;
-            try {
-                this.outputStream = new ObjectOutputStream(socket.getOutputStream());
-                this.inputStream = new ObjectInputStream(socket.getInputStream());
-                //outputStreamHashMap.put(socket.getInetAddress().toString() + ":" + socket.getPort(), this.outputStream);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            this.out = new ObjectOutputStream(socket.getOutputStream());
+            this.in = new ObjectInputStream(socket.getInputStream());
+        }
+
+        public boolean isSocketOk() {
+            return this.socket.isConnected();
+        }
+
+        public void authorize() {
+            this.auth = true;
+        }
+
+        public Object read() throws IOException, ClassNotFoundException {
+            return this.in.readObject();
+        }
+
+        public void send(Object obj) throws IOException {
+            this.out.writeObject(obj);
+        }
+    }
+
+    static class RequestService extends ForkJoinTask {
+        private final String name;
+
+        public RequestService(String name) {
+            this.name = name;
         }
 
         @Override
@@ -170,38 +195,42 @@ public class App {
         @Override
         protected boolean exec() {
             try {
-                while (!(socket.isClosed()) && socket.isConnected()) {
+
+                while (connectionHashMap.get(name).isSocketOk()) {
                     Precommand preCommand = null;
                     try {
-                        preCommand = (Precommand) inputStream.readObject();
+                        preCommand = (Precommand) connectionHashMap.get(name).read();
 //                        System.out.println(preCommand.getArg());
                     } catch (ClassNotFoundException e) {
-                        answerPool.submit(new AnswerService(this.outputStream, new Message("Ошибка при обработке команды.", false)));
+                        answerPool.submit(new AnswerService(this.name, new Message("Ошибка при обработке команды.", false)));
                     } catch (IOException e) {
                         break;
                     }
-                    processingPool.submit(new ProcessingService(outputStream, preCommand, socket.getInetAddress().toString() + ":" + socket.getPort()));
+                    processingPool.submit(new ProcessingService(this.name, preCommand));
                 }
-                adminInteractor.broadcastMessage(String.format("Клиент (%s:%s) отсоединился!", socket.getInetAddress().toString(), socket.getPort()), true);
-                authorizedUsers.remove(socket.getInetAddress().toString() + ":" + socket.getPort());
+                adminInteractor.broadcastMessage(String.format("Клиент (%s) отсоединился!", this.name), true);
+                synchronized (connectionHashMap) {
+                    connectionHashMap.remove(this.name);
+                }
+                authorizedUsers.remove(this.name);
                 //outputStreamHashMap.remove(socket.getInetAddress().toString() + ":" + socket.getPort());
             } catch (Exception ignored) {
             }
-            authorizedUsers.remove(socket.getInetAddress().toString() + ":" + socket.getPort());
-            //outputStreamHashMap.remove(socket.getInetAddress().toString() + ":" + socket.getPort());
+            synchronized (connectionHashMap) {
+                connectionHashMap.remove(this.name);
+            }
+            authorizedUsers.remove(this.name);
             return false;
         }
     }
 
     static class ProcessingService implements Runnable {
         private final Precommand preCommand;
-        private final ObjectOutputStream outputStream;
         private String currentUser = "";
 
-        public ProcessingService(ObjectOutputStream outputStream, Precommand precommand, String currentUser) {
+        public ProcessingService(String name, Precommand precommand) {
             this.preCommand = precommand;
-            this.outputStream = outputStream;
-            this.currentUser = currentUser;
+            this.currentUser = name;
         }
 
         @Override
@@ -209,6 +238,7 @@ public class App {
             Message msg;
             lock.lock();
             preCommand.setAuthor(authorizedUsers.get(currentUser));
+            System.out.println("Получена команда " + preCommand.getCommandName() + " от " + preCommand.getAuthor());
             Command command = CommandRouter.getCommand(preCommand, connectionDb);
             if (command instanceof Register) {
                 if (!authorizedUsers.get(currentUser).isEmpty()) {
@@ -239,39 +269,45 @@ public class App {
                         msg = command.execute(collection);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        msg = new Message("Возникла ошибка.", true);
+                        msg = new Message("Возникла ошибка.", false);
                     }
 
                 } else if (authorizedUsers.get(currentUser).isEmpty()) {
-                    msg = new Message("Только авторизованные пользователи могут выполнять команды!", true);
+                    msg = new Message("Только авторизованные пользователи могут выполнять команды!", false);
                 } else {
                     msg = new Message("Ошибка при обработке команды.", false);
                 }
-
-                //for (ObjectOutputStream outputStream1: outputStreamHashMap.values()){
-                //    answerPool.submit(new AnswerService(outputStream1, msg));
-                //}
-                //return;
+                synchronized (connectionHashMap) {
+                    if (command instanceof Changing && msg.isSuccessful()) {
+                        for (String nameUser : connectionHashMap.keySet()) {
+                            answerPool.submit(new AnswerService(nameUser, msg));
+                        }
+                        lock.unlock();
+                        return;
+                    }
+                }
             }
             lock.unlock();
 //            System.out.println(msg.getText());
-            answerPool.submit(new AnswerService(this.outputStream, msg));
+            answerPool.submit(new AnswerService(this.currentUser, msg));
         }
     }
 
     static class AnswerService implements Runnable {
-        private final ObjectOutputStream outputStream;
+        private final String name;
         private final Message msg;
 
-        public AnswerService(ObjectOutputStream outputStream, Message msg) {
-            this.outputStream = outputStream;
+        public AnswerService(String name, Message msg) {
+            this.name = name;
             this.msg = msg;
         }
 
         @Override
         public void run() {
             try {
-                outputStream.writeObject(msg);
+                synchronized (connectionHashMap) {
+                    connectionHashMap.get(this.name).send(msg);
+                }
             } catch (IOException e) {
                 adminInteractor.broadcastMessage("Клиент отсоединен.", true);
             }

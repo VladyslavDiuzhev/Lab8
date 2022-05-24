@@ -1,6 +1,7 @@
 package server.commands;
 
 import core.precommands.Precommand;
+import server.commands.interfaces.Changing;
 import server.commands.interfaces.Command;
 import server.commands.interfaces.Preprocessable;
 import core.essentials.FuelType;
@@ -21,7 +22,7 @@ import java.util.Stack;
  * @author Владислав Дюжев
  * @version 1.0
  */
-public class Add implements Command, Preprocessable {
+public class Add implements Command, Preprocessable, Changing {
     protected final boolean fromScript;
     protected Vehicle vehicle;
     protected VehicleRepository vehicleRepository;
