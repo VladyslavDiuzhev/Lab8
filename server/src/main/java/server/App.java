@@ -202,7 +202,7 @@ public class App {
                         preCommand = (Precommand) connectionHashMap.get(name).read();
 //                        System.out.println(preCommand.getArg());
                     } catch (ClassNotFoundException e) {
-                        answerPool.submit(new AnswerService(this.name, new Message("Ошибка при обработке команды.", false)));
+                        answerPool.submit(new AnswerService(this.name, new Message("command_fail", false)));
                     } catch (IOException e) {
                         break;
                     }
@@ -242,18 +242,18 @@ public class App {
             Command command = CommandRouter.getCommand(preCommand, connectionDb);
             if (command instanceof Register) {
                 if (!authorizedUsers.get(currentUser).isEmpty()) {
-                    msg = new Message("Пользователь уже авторизован!", false);
+                    msg = new Message("already_auth", false);
                 } else {
                     msg = command.execute(collection);
                 }
             } else if (command instanceof Authorize) {
                 if (!authorizedUsers.get(currentUser).isEmpty()) {
-                    msg = new Message("Пользователь уже авторизован!", false);
+                    msg = new Message("already_auth", false);
                 } else {
                     msg = command.execute(collection);
                     if (msg.isSuccessful()) {
                         if (authorizedUsers.containsValue(msg.getText().substring(40))) {
-                            msg = new Message("Пользователь с таким именем уже авторизован!", false);
+                            msg = new Message("already_auth_name", false);
                         } else {
                             authorizedUsers.put(currentUser, msg.getText().substring(40));
                             adminInteractor.broadcastMessage("Пользователь " + authorizedUsers.get(currentUser) + "  авторизован!", true);
@@ -269,13 +269,13 @@ public class App {
                         msg = command.execute(collection);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        msg = new Message("Возникла ошибка.", false);
+                        msg = new Message("gen_err", false);
                     }
 
                 } else if (authorizedUsers.get(currentUser).isEmpty()) {
-                    msg = new Message("Только авторизованные пользователи могут выполнять команды!", false);
+                    msg = new Message("need_auth", false);
                 } else {
-                    msg = new Message("Ошибка при обработке команды.", false);
+                    msg = new Message("gen_err", false);
                 }
                 synchronized (connectionHashMap) {
                     if (command instanceof Changing && msg.isSuccessful()) {
@@ -300,6 +300,7 @@ public class App {
         public AnswerService(String name, Message msg) {
             this.name = name;
             this.msg = msg;
+            System.out.println(msg.getText());
         }
 
         @Override

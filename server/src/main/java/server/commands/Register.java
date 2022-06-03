@@ -25,12 +25,12 @@ public class Register implements Command {
         UserInfo newUser = userRepository.getByLogin(userInfo.getLogin());
         if (newUser == null){
             if (userRepository.save(userInfo)){
-                return new Message("Регистрация пройдена!", true);
+                return new Message("success", true);
             } else {
-                return new Message("Возникла ошибка при регистрации.", false);
+                return new Message("reg_failed", false);
             }
         } else {
-            return new Message("Пользователь с таким логином уже существует.", false);
+            return new Message("already_exists", false);
         }
     }
 }

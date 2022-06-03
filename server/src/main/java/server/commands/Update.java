@@ -2,6 +2,7 @@ package server.commands;
 
 import core.precommands.ObjectIdPrecommand;
 import core.precommands.Precommand;
+import server.commands.interfaces.Changing;
 import server.commands.interfaces.IdCommand;
 import core.essentials.Vehicle;
 import core.interact.Message;
@@ -18,7 +19,7 @@ import java.util.Stack;
  * @author Владислав Дюжев
  * @version 1.0
  */
-public class Update extends Add implements IdCommand {
+public class Update extends Add implements IdCommand, Changing {
     private final String argument;
     private String author;
     private Connection connection;
@@ -40,11 +41,11 @@ public class Update extends Add implements IdCommand {
     public Message execute(Stack<Vehicle> stack) {
         if (this.vehicle.getName() == null | this.vehicle.getCoordinates() == null| this.vehicle.getCreationDate() == null
                 | this.vehicle.getType() == null | this.vehicle.getEnginePower() <= 0){
-            return new Message("Ошибка передачи объекта (недопустимые значения полей).", false);
+            return new Message("inv_format","UPDATE", false);
         }
         int index = idArgToIndex(argument, stack);
         if (index == -1) {
-            return new Message("Неверный аргумент. Ожидается число (id). Или данного элемента не существует.", true);
+            return new Message("inv_format","UPDATE", false);
         }
         UserRepository userRepository = new UserRepository(connection);
         VehicleRepository vehicleRepository = new VehicleRepository(connection);
@@ -54,16 +55,23 @@ public class Update extends Add implements IdCommand {
                 vehicle.setOwnerId(userRepository.getByLogin(author).getId());
                 vehicle.generateId(Integer.parseInt(argument));
                 stack.add(index, vehicle);
-                return new Message("Элемент успешно обновлен.", true);
+
+                Message msg = new Message("success", true);
+                msg.setType("UPDATE");
+                msg.setObject(this.vehicle);
+//                System.out.println(vehicle.getId());
+//                System.out.println(vehicle.getName());
+//                System.out.println(vehicle.getType());
+//                System.out.println(vehicle.getFuelType());
+//                System.out.println(vehicle.getCoordinates());
+//                System.out.println(vehicle.getEnginePower());
+//                System.out.println(vehicle.getOwnerId());
+                return msg;
             } else {
-                return new Message("Ошибка обновления.", true);
+                return new Message("gen_err","UPDATE", false);
             }
         }
-        return new Message("Вы можете изменять только созданные вами объекты.", true);
-//        stack.remove(index);
-//        vehicle.generateId(Integer.parseInt(argument));
-//        stack.add(index, vehicle);
-//        return new Message("Элемент успешно обновлен.", true);
+        return new Message("not_your","UPDATE", false);
     }
 
 }

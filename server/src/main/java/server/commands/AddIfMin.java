@@ -29,21 +29,21 @@ public class AddIfMin extends Add implements Changing {
     public Message execute(Stack<Vehicle> stack) {
         if (this.vehicle.getName() == null | this.vehicle.getCoordinates() == null| this.vehicle.getCreationDate() == null
                 | this.vehicle.getType() == null | this.vehicle.getEnginePower() <= 0){
-            return new Message("Ошибка передачи объекта (недопустимые значения полей).", false);
+            return new Message("inv_format", false);
         }
         if (stack.isEmpty() || this.vehicle.compareTo(Collections.min(stack)) < 0) {
             this.vehicle.generateId();
             this.vehicle = vehicleRepository.saveGet(this.vehicle);
             if (vehicle != null){
                 stack.add(this.vehicle);
-                Message msg = new Message("Элемент успешно добавлен.", true);
+                Message msg = new Message("success", true);
                 msg.setType("ADD");
                 msg.setObject(this.vehicle);
                 return msg;
             }
-            return new Message("Ошибка создания объекта.", false);
+            return new Message("gen_err", false);
         } else {
-            return  new Message("Элемент не минимальный.", false);
+            return  new Message("not_min", false);
         }
 
     }

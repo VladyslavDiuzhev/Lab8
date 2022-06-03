@@ -35,7 +35,7 @@ public class Clear implements Command {
                 if(vehicleRepository.deleteById(vehicle.getId())){
                     indexes.add(i);
                 } else {
-                    return new Message("Ошибка удаления.", true);
+                    return new Message("gen_err", true);
                 }
             }
             i++;
@@ -45,6 +45,6 @@ public class Clear implements Command {
             stack.remove(index-dif);
             dif++;
         }
-        return new Message("Все ваши объекты удалены.", true);
+        return new Message("success", true);
     }
 }

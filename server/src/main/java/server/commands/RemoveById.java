@@ -1,6 +1,7 @@
 package server.commands;
 
 import core.precommands.IdPrecommand;
+import server.commands.interfaces.Changing;
 import server.commands.interfaces.Command;
 import server.commands.interfaces.IdCommand;
 import core.essentials.Vehicle;
@@ -18,7 +19,7 @@ import java.util.Stack;
  * @author Владислав Дюжев
  * @version 1.0
  */
-public class RemoveById implements Command, IdCommand {
+public class RemoveById implements Command, IdCommand, Changing {
     private final String argument;
     private Connection connection;
     private String author;
@@ -44,19 +45,22 @@ public class RemoveById implements Command, IdCommand {
     public Message execute(Stack<Vehicle> stack) {
         int index = idArgToIndex(argument, stack);
         if (index == -1) {
-            return new Message("Неверный аргумент. Ожидается число (id). Или данного элемента не существует.", true);
+            return new Message("inv_format", false);
         }
         UserRepository userRepository = new UserRepository(connection);
         VehicleRepository vehicleRepository = new VehicleRepository(connection);
         if (vehicleRepository.getById(Integer.parseInt(argument)).getOwnerId() == userRepository.getByLogin(author).getId()){
             if(vehicleRepository.deleteById(Integer.parseInt(argument))){
                 stack.remove(index);
-                return new Message("Элемент успешно удален.", true);
+                Message msg = new Message("success", true);
+                msg.setType("DEL");
+                msg.setObject(Integer.parseInt(argument));
+                return msg;
             } else {
-                return new Message("Ошибка удаления.", true);
+                return new Message("gen_err", false);
             }
         }
-        return new Message("Вы можете удалять только созданные вами объекты", true);
+        return new Message("not_your", false);
 
     }
 }

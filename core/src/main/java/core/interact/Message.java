@@ -16,6 +16,13 @@ public class Message implements Serializable {
         this.result = result;
     }
 
+    public Message(String text,String type, boolean result) {
+        this.type = type;
+        this.text = text;
+        this.creationDate = ZonedDateTime.now();
+        this.result = result;
+    }
+
     public void setType(String type){
         this.type = type;
     }

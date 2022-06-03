@@ -26,7 +26,7 @@ public class Authorize implements Command {
         if (newUser != null && newUser.getPassword().equals(EncryptorSHA_1.encryptPassword(userInfo.getPassword()))) {
             return new Message("Авторизация пройдена! Добро пожаловать, " + userInfo.getLogin(), true);
         } else {
-            return new Message("Авторизация не пройдена!", false);
+            return new Message("auth_failed", false);
         }
     }
 }
