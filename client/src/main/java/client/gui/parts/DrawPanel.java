@@ -62,6 +62,16 @@ public class DrawPanel extends JPanel {
                         }
                     }
 
+                } else if (SwingUtilities.isLeftMouseButton(e)){
+                    Rectangle r = getBounds();
+                    int x = e.getX() - r.width / 2;
+                    int y = -e.getY() + r.height / 2;
+                    for (int[] obj : objects) {
+                        if (Math.pow(x - obj[2], 2) + Math.pow(y - obj[3], 2) <= 100) {
+                            mainView.showInfo(obj[0]);
+                            return;
+                        }
+                    }
                 }
             }
 

@@ -1,5 +1,6 @@
 package client.gui.main;
 
+import client.PreCommandRouter;
 import client.gui.auth.LoginView;
 import client.gui.parts.CreationPanel;
 import client.gui.parts.DrawPanel;
@@ -8,6 +9,7 @@ import core.essentials.Vehicle;
 import core.essentials.VehicleType;
 import core.interact.Message;
 import core.interact.NetInteractor;
+import core.interact.ScriptInteractor;
 import core.precommands.BasicPrecommand;
 import core.precommands.IdPrecommand;
 import core.precommands.Precommand;
@@ -19,9 +21,7 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.List;
@@ -307,10 +307,14 @@ public class MainView extends JFrame {
                 }
             }
         });
+
+
+
         JButton showCreate = new JButton(resourceBundle.getString("add_upd"));
         showCreate.setHorizontalAlignment(SwingConstants.LEFT);
         drawButton.setHorizontalAlignment(SwingConstants.LEFT);
         tableButton.setHorizontalAlignment(SwingConstants.LEFT);
+
         showCreate.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -320,6 +324,7 @@ public class MainView extends JFrame {
         drawButton.setMargin(new Insets(0, 0, 0, 0));
         showCreate.setMargin(new Insets(0, 0, 0, 0));
         tableButton.setMargin(new Insets(0, 0, 0, 0));
+
 
 
         topPanel.add(drawButton);
@@ -477,4 +482,26 @@ public class MainView extends JFrame {
             JOptionPane.showMessageDialog(mainPanel, resourceBundle.getString("serv_conn_err"));
         }
     }
+
+    public void showInfo(int i) {
+        int ind = -1;
+        for (int j = 0; j < vehicleTable.getColumnCount(); j++) {
+            if ((Integer) vehicleTable.getModel().getValueAt(j, 0) == i) {
+                ind = j;
+                break;
+            }
+        }
+        if (ind != -1) {
+            JOptionPane.showMessageDialog(mainPanel, resourceBundle.getString("creat_date") + ": " + vehicleTable.getModel().getValueAt(ind, 1) + "\n" +
+                    resourceBundle.getString("naming") + ": " + vehicleTable.getModel().getValueAt(ind, 2) + "\n" +
+                    resourceBundle.getString("type") + ": " + vehicleTable.getModel().getValueAt(ind, 3) + "\n" +
+                    resourceBundle.getString("fuel") + ": " + vehicleTable.getModel().getValueAt(ind, 4) + "\n" +
+                    resourceBundle.getString("power") + ": " + vehicleTable.getModel().getValueAt(ind, 5) + "\n" +
+                    resourceBundle.getString("x_cord") + ": " + vehicleTable.getModel().getValueAt(ind, 6) + "\n" +
+                    resourceBundle.getString("y_cord") + ": " + vehicleTable.getModel().getValueAt(ind, 7) + "\n" +
+                    resourceBundle.getString("owner") + ": " + vehicleTable.getModel().getValueAt(ind, 8));
+        }
+
+    }
+
 }
